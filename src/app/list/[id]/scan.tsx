@@ -190,6 +190,6 @@ const styles = StyleSheet.create({
   reticle: { width: '78%', height: 120, borderWidth: 3, borderRadius: radius.md },
   hint: { color: '#fff', fontWeight: '700', textShadowColor: '#000', textShadowRadius: 4 },
   productLine: { flexDirection: 'row', gap: space.md, alignItems: 'center' },
-  thumb: { width: 56, height: 56, borderRadius: radius.sm, backgroundColor: '#fff' },
+  thumb: { width: 56, height: 56, borderRadius: radius.sm, backgroundColor: '#e5e7eb' },
   actions: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
 })

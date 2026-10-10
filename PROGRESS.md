@@ -16,19 +16,25 @@ the portfolio live demo.
   Facts lookup, check-digit validation, duplicate warning, manual entry), share (code, link, members, rename,
   leave/delete), join (works signed out), account.
 - 41 Jest unit tests (`npm test`); typecheck + `expo lint` clean; web export builds.
-- Integration suite `tests/integration/sharecart.test.mts` (node:test, 3 anonymous users): **written, not yet run**
-  — needs the Supabase project.
+- Supabase project `pcyygcltdylmicfbaqbi` (Frankfurt) is set up by the owner: migration run, anonymous sign-ins on.
+  URL + publishable key in `.env` (gitignored).
+- Integration suite `tests/integration/sharecart.test.mts` (node:test, 3 anonymous users): **12/12 passing**, three
+  runs in a row; realtime delivery 0.7–2 s.
+- Two-browser Playwright check of the web build (scratchpad `ui-e2e/sharecart.mjs`): 16/16 steps, no console
+  errors: guest sign-in with sample list, invite link while signed out → preview → join, live member join,
+  presence, add/check/edit/delete crossing over, Open Food Facts lookup, duplicate barcode, live home counts,
+  bad codes, list deletion seen by the other member.
 - Appium suite in `e2e/` (4 specs), typechecks. Running it is on hold (owner, 2026-10-08: no JDK/Android SDK setup).
 
 ## In progress
-- Waiting on the owner to create the Supabase project (see README "Set up Supabase").
+- Nothing mid-edit. Waiting on the owner to deploy to Vercel.
 
 ## Next steps
-1. Owner: create Supabase project, run the migration SQL, enable anonymous sign-ins (and turn off Confirm email),
-   put URL + publishable key in `.env`.
-2. Run `npm run test:integration`; fix anything it finds. Check two browsers syncing via Playwright on the web build.
-3. Owner deploys to Vercel with the two EXPO_PUBLIC_ env vars; then push WIP to a branch, not `main`.
-4. Portfolio entry (screenshots from the deployed app, two-user realtime shot) + About mention.
+1. Owner deploys to Vercel with EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY env vars. After
+   that, push WIP to a branch, not `main`.
+2. Run the two-browser check against the live URL; portfolio entry (screenshots from the deployed app, a two-person
+   realtime shot) + About mention; merge the portfolio branch.
+3. (On hold) EAS APK and running the Appium suite.
 
 ## Decisions & gotchas
 - **Expo Router**, per the template's AGENTS.md (the spec didn't name a navigator; SalahCompanion used React
@@ -44,3 +50,11 @@ the portfolio live demo.
 - Optimistic drafts use `updated_at = epoch` so the server row always wins regardless of device clock skew.
 - React Compiler lint forbids setState called synchronously in effects: initial loads go through an async IIFE.
 - Node runs the integration test as `.mts` (native TS type stripping, ESM).
+- Realtime is "ready" on the channel's `system` message (extension postgres_changes, status ok), not on SUBSCRIBED;
+  the app refetches at that point and the tests wait for it. A fresh project's first subscription can take seconds.
+- Don't use expo-router `<Link asChild>` around a Pressable with array styles: on web it put a style array on the
+  DOM node and crashed the list screen. Navigation uses Pressable + router.push.
+- New guests: AuthProvider holds the session back (holdSession ref) until the sample list is seeded, so the home
+  screen never shows it half-filled.
+- Supabase limits anonymous sign-ins to 30/hour per IP; repeated test runs hit HTTP 429.
+- Expo bakes EXPO_PUBLIC_* vars in at bundle time; after changing .env use `npx expo export --clear`.

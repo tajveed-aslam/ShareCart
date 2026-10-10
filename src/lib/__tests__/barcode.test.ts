@@ -62,6 +62,9 @@ describe('Open Food Facts', () => {
     expect(productTitle({ name: 'Nutella', brand: 'Ferrero' })).toBe('Ferrero Nutella')
     expect(productTitle({ name: 'Heinz Tomato Ketchup', brand: 'Heinz' })).toBe('Heinz Tomato Ketchup')
     expect(productTitle({ name: 'Milk', brand: null })).toBe('Milk')
+    expect(productTitle({ name: 'Coca-Cola Original', brand: 'COCA-COLA SERVICES SA/NV' })).toBe('Coca-Cola Original')
+    expect(productTitle({ name: 'Original crisps', brand: 'Big Snack Company Holdings Ltd' })).toBe('Original crisps')
+    expect(productTitle({ name: 'Ketchup', brand: 'Heinz' })).toBe('Heinz Ketchup')
   })
 
   it('reports found / not-found / error from the HTTP layer', async () => {

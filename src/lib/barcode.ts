@@ -50,10 +50,16 @@ export function parseOffResponse(barcode: string, json: OffResponse): Product | 
   return { barcode, name, brand, size, imageUrl: p.image_front_small_url ?? null }
 }
 
-/** "Nutella" + "Ferrero" → "Ferrero Nutella", unless the name already contains the brand. */
+/**
+ * "Nutella" + "Ferrero" → "Ferrero Nutella". The brand is left off when the name already mentions it
+ * ("Coca-Cola Original" from "COCA-COLA SERVICES SA/NV"), or when it's a long company name rather than a brand.
+ */
 export function productTitle(product: Pick<Product, 'name' | 'brand'>): string {
   const { name, brand } = product
-  if (!brand || name.toLowerCase().includes(brand.toLowerCase())) return name
+  if (!brand) return name
+  const lowerName = name.toLowerCase()
+  const brandWords = brand.toLowerCase().split(/[\s/]+/).filter((w) => w.replace(/[^a-z0-9]/g, '').length >= 3)
+  if (brandWords.length === 0 || brandWords.length > 3 || brandWords.some((w) => lowerName.includes(w))) return name
   return `${brand} ${name}`
 }
 
