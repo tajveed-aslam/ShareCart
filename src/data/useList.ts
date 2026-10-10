@@ -40,10 +40,11 @@ async function fetchSnapshot(listId: string): Promise<SnapshotResult> {
  * Edits are applied optimistically and reconciled by applyItemChange when the server's row (or its echo) arrives.
  * After any reconnect the list is refetched, so nothing missed while offline is lost.
  *
- * `live: false` loads once without a channel. Screens stacked on top of the list (share) use it: a second channel
- * on the same topic would be torn down with them and take the list screen's subscription along.
+ * Presence needs every member on the same topic (`list:<id>`), and a device may only hold one channel per topic.
+ * Screens stacked on the list screen (share) pass `presence: false`: they still get row changes, on a channel
+ * with a unique name, so closing them can't tear down the list screen's subscription.
  */
-export function useList(listId: string, me: { id: string; name: string } | null, { live = true } = {}) {
+export function useList(listId: string, me: { id: string; name: string } | null, { presence = true } = {}) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [terminal, setTerminal] = useState<{ listId: string; status: Status; message?: string } | null>(null)
   const [connection, setConnection] = useState<Connection>('connecting')
@@ -78,12 +79,13 @@ export function useList(listId: string, me: { id: string; name: string } | null,
     if (!meId) return
     const seq = ++loadSeq.current
     void (async () => apply(seq, await fetchSnapshot(listId)))()
-    if (!live) return
 
     const onItem = (payload: RealtimePostgresChangesPayload<Item>) => patchItems((items) => applyItemChange(items, payload as unknown as ItemChange, listId))
 
     const channel = supabase
-      .channel(`list:${listId}`, { config: { presence: { key: meId } } })
+      .channel(presence ? `list:${listId}` : `list-rows:${listId}:${Math.random().toString(36).slice(2)}`, {
+        config: presence ? { presence: { key: meId } } : {},
+      })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'items', filter: `list_id=eq.${listId}` }, onItem)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'items', filter: `list_id=eq.${listId}` }, onItem)
       // Under RLS a DELETE payload carries only the primary key, so it can't be filtered by list_id server-side.
@@ -105,7 +107,7 @@ export function useList(listId: string, me: { id: string; name: string } | null,
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setConnection('live')
-          void channel.track({ name: meName, at: new Date().toISOString() })
+          if (presence) void channel.track({ name: meName, at: new Date().toISOString() })
           void load() // catch anything that changed while (re)connecting
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           setConnection('offline')
@@ -115,7 +117,7 @@ export function useList(listId: string, me: { id: string; name: string } | null,
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [listId, meId, meName, live, load, apply, patchItems])
+  }, [listId, meId, meName, presence, load, apply, patchItems])
 
   const run = useCallback(async <T,>(action: () => Promise<T>, rollback?: () => void): Promise<T | undefined> => {
     setActionError(null)

@@ -16,7 +16,7 @@ export default function ShareScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user, profile } = useAuth()
   const me = user ? { id: user.id, name: profile?.display_name ?? '' } : null
-  const { status, list, members, actions, reload } = useList(id, me, { live: false })
+  const { status, list, members, actions, reload } = useList(id, me, { presence: false })
   const [copied, setCopied] = useState(false)
   const [rename, setRename] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
