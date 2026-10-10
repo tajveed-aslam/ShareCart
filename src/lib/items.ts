@@ -54,7 +54,10 @@ export function parseItemInput(input: string): { name: string; quantity: string 
   return { name: text, quantity: null }
 }
 
-/** Optimistically flips an item; the server stamps checked_by/checked_at, the local copy just guesses. */
+/**
+ * Optimistically flips an item; the server stamps checked_by/checked_at, the local copy just guesses. updated_at is
+ * left alone so the server's row, whatever its clock says, replaces this guess.
+ */
 export function toggledLocally(item: Item, userId: string, now = new Date()): Item {
   const checked = !item.checked
   return {
