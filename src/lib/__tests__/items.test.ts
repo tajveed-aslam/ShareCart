@@ -84,13 +84,15 @@ describe('findDuplicate', () => {
 describe('parseItemInput', () => {
   it.each([
     ['Milk', 'Milk', null],
-    ['2 milk', 'milk', '2'],
-    ['3kg rice', 'rice', '3kg'],
-    ['500 g flour', 'flour', '500 g'],
-    ['2x eggs', 'eggs', '2'],
-    ['eggs x 12', 'eggs', '12'],
-    ['eggs 6x', 'eggs', '6'],
-    ['  oat   milk  ', 'oat milk', null],
+    ['2 milk', 'Milk', '2'],
+    ['3kg rice', 'Rice', '3kg'],
+    ['500 g flour', 'Flour', '500 g'],
+    ['2x eggs', 'Eggs', '2'],
+    ['eggs x 12', 'Eggs', '12'],
+    ['eggs 6x', 'Eggs', '6'],
+    ['  oat   milk  ', 'Oat milk', null],
+    ['iPhone charger', 'iPhone charger', null],
+    ['2 eBay vouchers', 'eBay vouchers', '2'],
   ])('%s', (input, name, quantity) => {
     expect(parseItemInput(input)).toEqual({ name, quantity })
   })

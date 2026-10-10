@@ -44,14 +44,17 @@ export function findDuplicate(items: Item[], name: string, barcode: string | nul
   return items.find((i) => !i.checked && ((barcode && i.barcode === barcode) || normalizeName(i.name) === n)) ?? null
 }
 
+/** "bread" → "Bread". Names whose first word already has capitals ("iPhone charger", "eBay voucher") stay as typed. */
+const capitalize = (name: string) => (/^[a-z]+$/.test(name.split(' ')[0]) ? name.charAt(0).toUpperCase() + name.slice(1) : name)
+
 /** Splits "2 milk", "milk x2" or "3kg rice" into a name and quantity; plain text is just a name. */
 export function parseItemInput(input: string): { name: string; quantity: string | null } {
   const text = input.trim().replace(/\s+/g, ' ')
   const leading = text.match(/^(\d+(?:[.,]\d+)?\s?(?:x|kg|g|l|ml|pcs|pack|packs|dozen)?)\s+(.+)$/i)
-  if (leading) return { name: leading[2], quantity: leading[1].replace(/\s?x$/i, '') }
+  if (leading) return { name: capitalize(leading[2]), quantity: leading[1].replace(/\s?x$/i, '') }
   const trailing = text.match(/^(.+?)\s+(?:x\s?(\d+)|(\d+)\s?x)$/i)
-  if (trailing) return { name: trailing[1], quantity: trailing[2] ?? trailing[3] }
-  return { name: text, quantity: null }
+  if (trailing) return { name: capitalize(trailing[1]), quantity: trailing[2] ?? trailing[3] }
+  return { name: capitalize(text), quantity: null }
 }
 
 /**
