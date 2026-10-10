@@ -60,6 +60,10 @@ export function useLists(userId: string | null) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lists' }, scheduleLoad)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'list_members', filter: `user_id=eq.${userId}` }, scheduleLoad)
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'list_members' }, scheduleLoad)
+      // Refetch once the database listener is attached (also after reconnects), so nothing in between is missed.
+      .on('system', {}, (p: { extension?: string; status?: string }) => {
+        if (p.extension === 'postgres_changes' && p.status === 'ok') scheduleLoad()
+      })
       .subscribe()
     return () => {
       if (timer.current) clearTimeout(timer.current)

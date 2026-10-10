@@ -30,23 +30,32 @@ async function user(name: string): Promise<{ db: SupabaseClient; id: string }> {
 }
 
 /**
- * Subscribes to item INSERTs on a list as `db`'s user. `wait` resolves with the first row matching `predicate`, or
- * null if none arrives within `ms` of the subscription being confirmed.
+ * Subscribes to item INSERTs on a list as `db`'s user. `wait` resolves with the first row matching `predicate` (and
+ * when it arrived), or null if none arrives within `ms`.
+ *
+ * Ready means the server's `system` message "Subscribed to PostgreSQL", not the SUBSCRIBED status: SUBSCRIBED only
+ * says the socket joined the channel, and on a cold project the database listener can attach seconds later.
  */
 async function watchInserts(db: SupabaseClient, listId: string, predicate: (row: Item) => boolean, ms: number) {
-  let settle!: (row: Item | null) => void
-  const wait = new Promise<Item | null>((resolve) => (settle = resolve))
+  let settle!: (hit: { row: Item; at: number } | null) => void
+  const wait = new Promise<{ row: Item; at: number } | null>((resolve) => (settle = resolve))
+  let ready!: () => void
+  let failed!: (e: Error) => void
+  const listening = new Promise<void>((resolve, reject) => ((ready = resolve), (failed = reject)))
   const channel = db
     .channel(`test-${listId}-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'items', filter: `list_id=eq.${listId}` }, (p: RealtimePostgresChangesPayload<Item>) => {
-      if (predicate(p.new as Item)) settle(p.new as Item)
+      if (predicate(p.new as Item)) settle({ row: p.new as Item, at: Date.now() })
     })
-  await new Promise<void>((resolve, reject) =>
-    channel.subscribe((status, err) => {
-      if (status === 'SUBSCRIBED') resolve()
-      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') reject(err ?? new Error(status))
-    }),
-  )
+    .on('system', {}, (p: { extension?: string; status?: string; message?: string }) => {
+      if (p.extension !== 'postgres_changes') return
+      if (p.status === 'ok') ready()
+      else failed(new Error(`realtime: ${p.message}`))
+    })
+  channel.subscribe((status, err) => {
+    if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') failed(err ?? new Error(status))
+  })
+  await Promise.race([listening, new Promise((_, reject) => setTimeout(() => reject(new Error('realtime never became ready')), 20_000))])
   const timer = setTimeout(() => settle(null), ms)
   return {
     wait,
@@ -167,18 +176,17 @@ describe('ShareCart database rules and realtime', { skip }, () => {
   })
 
   it('streams a member’s new item to the others in real time, and not to outsiders', async () => {
-    const aliceSub = await watchInserts(alice.db, listId, (r) => r.name === 'Bread', 15_000)
-    const eveSub = await watchInserts(eve.db, listId, (r) => r.name === 'Bread', 8_000)
-    await new Promise((r) => setTimeout(r, 500)) // let the server finish attaching both subscriptions
+    const aliceSub = await watchInserts(alice.db, listId, (r) => r.name === 'Bread', 10_000)
+    const eveSub = await watchInserts(eve.db, listId, (r) => r.name === 'Bread', 5_000)
     const started = Date.now()
     const { error } = await bob.db.from('items').insert({ list_id: listId, name: 'Bread' })
     assert.ifError(error)
     const [seenByAlice, seenByEve] = await Promise.all([aliceSub.wait, eveSub.wait])
     await Promise.all([aliceSub.stop(), eveSub.stop()])
     assert.ok(seenByAlice, 'Alice should receive the insert')
-    assert.equal(seenByAlice.added_by, bob.id)
+    assert.equal(seenByAlice.row.added_by, bob.id)
     assert.equal(seenByEve, null, 'Eve must not receive changes for a list she is not on')
-    console.log(`    realtime latency: ${Date.now() - started} ms`)
+    console.log(`    realtime: Bob's insert reached Alice in ${seenByAlice.at - started} ms`)
   })
 
   it('cuts access when a member leaves', async () => {

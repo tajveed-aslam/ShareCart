@@ -104,11 +104,15 @@ export function useList(listId: string, me: { id: string; name: string } | null,
         else void load()
       })
       .on('presence', { event: 'sync' }, () => setOnline(Object.keys(channel.presenceState())))
+      // SUBSCRIBED means the socket joined; the database listener attaches a moment later and announces itself
+      // here. Refetching at that point closes the gap in which a change could be missed (on join or reconnect).
+      .on('system', {}, (p: { extension?: string; status?: string }) => {
+        if (p.extension === 'postgres_changes' && p.status === 'ok') void load()
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setConnection('live')
           if (presence) void channel.track({ name: meName, at: new Date().toISOString() })
-          void load() // catch anything that changed while (re)connecting
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           setConnection('offline')
         }
