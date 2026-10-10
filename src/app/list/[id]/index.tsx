@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
-import { Link, router, Stack, useLocalSearchParams } from 'expo-router'
+import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { KeyboardAvoidingView, Platform, Pressable, SectionList, StyleSheet, Text, View } from 'react-native'
 import { useAuth } from '@/auth/AuthProvider'
@@ -78,12 +78,10 @@ export default function ListScreen() {
               {others.slice(0, 3).map((uid) => (
                 <Avatar key={uid} userId={uid} name={names.get(uid) ?? '?'} size={26} ring={t.primary} />
               ))}
-              <Link href={{ pathname: '/list/[id]/share', params: { id: list.id } }} asChild>
-                <Pressable testID="open-share" accessibilityRole="button" accessibilityLabel="Share list" hitSlop={8} style={styles.headerButton}>
+              <Pressable onPress={() => router.push({ pathname: '/list/[id]/share', params: { id: list.id } })} testID="open-share" accessibilityRole="button" accessibilityLabel="Share list" hitSlop={8} style={styles.headerButton}>
                   <Ionicons name="person-add-outline" size={20} color={t.primary} />
                   <Text style={{ color: t.primary, fontWeight: '700' }}>{members.length}</Text>
                 </Pressable>
-              </Link>
             </View>
           ),
         }}
@@ -120,8 +118,8 @@ export default function ListScreen() {
                       maxLength={120}
                     />
                   </View>
-                  <Link href={{ pathname: '/list/[id]/scan', params: { id: list.id } }} asChild>
-                    <Pressable
+                  <Pressable
+                    onPress={() => router.push({ pathname: '/list/[id]/scan', params: { id: list.id } })}
                       testID="open-scanner"
                       accessibilityRole="button"
                       accessibilityLabel="Scan a barcode"
@@ -129,7 +127,6 @@ export default function ListScreen() {
                     >
                       <Ionicons name="barcode-outline" size={24} color={t.text} />
                     </Pressable>
-                  </Link>
                   <Pressable
                     testID="add-item-submit"
                     accessibilityRole="button"

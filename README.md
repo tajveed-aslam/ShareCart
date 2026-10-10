@@ -52,6 +52,9 @@ npm run lint
 
 End-to-end tests with Appium are in [`e2e/`](e2e/README.md).
 
+Each run signs in a few guest users. Supabase allows 30 anonymous sign-ins per hour per IP by default, so running
+the suites many times in a row returns HTTP 429; wait, or raise the limit under Authentication → Rate Limits.
+
 ## Deploy the web version (Vercel)
 
 Import the repo in Vercel and add two environment variables, `EXPO_PUBLIC_SUPABASE_URL` and

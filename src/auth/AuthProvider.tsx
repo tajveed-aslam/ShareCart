@@ -1,5 +1,5 @@
 import type { Session, User } from '@supabase/supabase-js'
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createListWithItems } from '../data/mutations'
 import { errorMessage, supabase, supabaseConfigured } from '../lib/supabase'
 import type { Profile } from '../lib/types'
@@ -37,6 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const user = session?.user ?? null
+  // While a new guest's sample list is being created, auth events are held back so the screens don't switch to the
+  // home screen (and show the list half-filled) until the seeding is done.
+  const holdSession = useRef(false)
+  const heldSession = useRef<Session | null | undefined>(undefined)
 
   useEffect(() => {
     if (!supabaseConfigured) return
@@ -45,7 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setReady(true)
     })
     // Keep this callback synchronous: awaiting Supabase calls inside it can deadlock the auth client.
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next))
+    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+      if (holdSession.current) heldSession.current = next
+      else setSession(next)
+    })
     return () => data.subscription.unsubscribe()
   }, [])
 
@@ -81,19 +88,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const continueAsGuest = useCallback(async (name: string): Promise<Result> => {
-    const { data, error } = await supabase.auth.signInAnonymously({ options: { data: { display_name: name.trim() } } })
-    if (error) {
-      if (/anonymous sign-ins are disabled/i.test(error.message)) return { ok: false, error: 'Guest mode is turned off for this app.' }
-      return { ok: false, error: errorMessage(error) }
-    }
-    if (data.user) {
-      try {
-        await createListWithItems('Weekly shop', SAMPLE_ITEMS)
-      } catch {
-        // The sample list is a nicety; signing in still worked.
+    holdSession.current = true
+    try {
+      const { data, error } = await supabase.auth.signInAnonymously({ options: { data: { display_name: name.trim() } } })
+      if (error) {
+        if (/anonymous sign-ins are disabled/i.test(error.message)) return { ok: false, error: 'Guest mode is turned off for this app.' }
+        return { ok: false, error: errorMessage(error) }
       }
+      if (data.user) {
+        try {
+          await createListWithItems('Weekly shop', SAMPLE_ITEMS)
+        } catch {
+          // The sample list is a nicety; signing in still worked.
+        }
+      }
+      return { ok: true }
+    } finally {
+      holdSession.current = false
+      if (heldSession.current !== undefined) setSession(heldSession.current)
+      heldSession.current = undefined
     }
-    return { ok: true }
   }, [])
 
   const updateName = useCallback(

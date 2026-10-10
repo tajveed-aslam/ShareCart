@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons'
-import { Link, router, Stack } from 'expo-router'
+import { router, Stack } from 'expo-router'
 import { useState } from 'react'
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useAuth } from '@/auth/AuthProvider'
@@ -29,11 +29,9 @@ export default function ListsScreen() {
         options={{
           headerRight: () =>
             user && (
-              <Link href="/account" asChild>
-                <Pressable testID="open-account" accessibilityRole="button" accessibilityLabel="Account" hitSlop={8}>
-                  <Avatar userId={user.id} name={profile?.display_name ?? '?'} size={32} />
-                </Pressable>
-              </Link>
+              <Pressable testID="open-account" accessibilityRole="button" accessibilityLabel="Account" hitSlop={8} onPress={() => router.push('/account')}>
+                <Avatar userId={user.id} name={profile?.display_name ?? '?'} size={32} />
+              </Pressable>
             ),
         }}
       />
@@ -71,8 +69,8 @@ function ListRow({ list }: { list: ListSummary }) {
   const t = useTheme()
   const done = list.total > 0 && list.remaining === 0
   return (
-    <Link href={{ pathname: '/list/[id]', params: { id: list.id } }} asChild>
-      <Pressable
+    <Pressable
+        onPress={() => router.push({ pathname: '/list/[id]', params: { id: list.id } })}
         testID={`list-row-${list.name}`}
         accessibilityRole="button"
         accessibilityLabel={`${list.name}, ${list.remaining} of ${list.total} left`}
@@ -92,8 +90,7 @@ function ListRow({ list }: { list: ListSummary }) {
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={20} color={t.muted} />
-      </Pressable>
-    </Link>
+    </Pressable>
   )
 }
 

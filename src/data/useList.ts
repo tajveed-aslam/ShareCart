@@ -60,7 +60,11 @@ export function useList(listId: string, me: { id: string; name: string } | null,
       if (result.kind === 'ok') {
         setTerminal(null)
         setSnapshot(result.snapshot)
-      } else setTerminal({ listId, status: result.kind, message: result.kind === 'error' ? result.message : undefined })
+      } else {
+        const next = { listId, status: result.kind, message: result.kind === 'error' ? result.message : undefined }
+        // A refetch that finds nothing must not replace the more specific "deleted" / "removed" we already know.
+        setTerminal((t) => (t?.listId === listId && result.kind === 'not-found' && (t.status === 'deleted' || t.status === 'removed') ? t : next))
+      }
     },
     [listId],
   )
@@ -100,7 +104,8 @@ export function useList(listId: string, me: { id: string; name: string } | null,
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'list_members' }, (p) => {
         const old = p.old as Partial<Member>
         if (old.list_id !== listId) return
-        if (old.user_id === meId) setTerminal({ listId, status: 'removed' })
+        // Deleting a list also deletes its memberships: "deleted" is the more useful message, so it wins.
+        if (old.user_id === meId) setTerminal((t) => (t?.listId === listId && t.status === 'deleted' ? t : { listId, status: 'removed' }))
         else void load()
       })
       .on('presence', { event: 'sync' }, () => setOnline(Object.keys(channel.presenceState())))
