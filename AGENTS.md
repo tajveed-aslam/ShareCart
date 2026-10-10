@@ -39,3 +39,12 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## This project (ShareCart)
+
+- Backend is Supabase. The schema, RLS policies, triggers and RPCs live in `supabase/migrations/`; change the
+  database only through a new migration file, and keep `tests/integration/sharecart.test.mts` passing
+  (`npm run test:integration`, needs `.env`).
+- Who added/checked an item is set by database triggers, never by the client. Don't send `added_by`/`checked_by`.
+- Testing: Jest for `src/lib/`; Appium (WebdriverIO + TS) in `e2e/` with stable `testID`s on every interactive
+  element (item rows: `item-<name>`); see `PROGRESS.md` for decisions and gotchas.
