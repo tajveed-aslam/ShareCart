@@ -5,7 +5,7 @@ describe('invite codes', () => {
   it('normalizes what people type or paste', () => {
     expect(normalizeInviteCode('abcd-efgh')).toBe('ABCDEFGH')
     expect(normalizeInviteCode(' 7k9m 2pq4 ')).toBe('7K9M2PQ4')
-    expect(normalizeInviteCode('https://sharecart.vercel.app/join/7K9M2PQ4')).toBe('7K9M2PQ4')
+    expect(normalizeInviteCode('https://sharecart-omega.vercel.app/join/7K9M2PQ4')).toBe('7K9M2PQ4')
     expect(normalizeInviteCode('sharecart://join/7k9m-2pq4')).toBe('7K9M2PQ4')
   })
 
@@ -19,7 +19,7 @@ describe('invite codes', () => {
   it('formats codes and builds links', () => {
     expect(formatInviteCode('7k9m2pq4')).toBe('7K9M-2PQ4')
     expect(formatInviteCode('short')).toBe('SHORT')
-    expect(inviteLink('7K9M-2PQ4', 'https://sharecart.vercel.app/')).toBe('https://sharecart.vercel.app/join/7K9M2PQ4')
+    expect(inviteLink('7K9M-2PQ4', 'https://sharecart-omega.vercel.app/')).toBe('https://sharecart-omega.vercel.app/join/7K9M2PQ4')
   })
 })
 

@@ -5,6 +5,9 @@ the family with a code or link, and everyone's changes show up on everyone's pho
 who put it in the cart, and who's looking at the list right now. Add items by typing ("2 milk") or by scanning a
 barcode with the camera.
 
+**Live demo (web): https://sharecart-omega.vercel.app/** — continue as a guest, open Share, and open the invite link
+in a private window to watch two people edit the same list in real time.
+
 | | |
 |---|---|
 | **Lists** | Create, rename and delete lists; item counts on the home screen update live. |

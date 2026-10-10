@@ -6,5 +6,5 @@ import { Platform } from 'react-native'
  */
 export function appOrigin(): string {
   if (Platform.OS === 'web' && typeof window !== 'undefined') return window.location.origin
-  return process.env.EXPO_PUBLIC_APP_URL ?? 'https://sharecart.vercel.app'
+  return process.env.EXPO_PUBLIC_APP_URL ?? 'https://sharecart-omega.vercel.app'
 }

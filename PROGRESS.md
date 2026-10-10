@@ -20,6 +20,9 @@ the portfolio live demo.
   URL + publishable key in `.env` (gitignored).
 - Integration suite `tests/integration/sharecart.test.mts` (node:test, 3 anonymous users): **12/12 passing**, three
   runs in a row; realtime delivery 0.7–2 s.
+- **Live on Vercel: https://sharecart-omega.vercel.app/** (auto-deploys from `main`, so WIP goes on a branch). Env
+  vars EXPO_PUBLIC_SUPABASE_URL / _PUBLISHABLE_KEY set in Vercel. The two-browser check passes 16/16 against it.
+- Portfolio entry added with `featured: false` (owner: FitCheck stays the lead featured project).
 - Two-browser Playwright check of the web build (scratchpad `ui-e2e/sharecart.mjs`): 16/16 steps, no console
   errors: guest sign-in with sample list, invite link while signed out → preview → join, live member join,
   presence, add/check/edit/delete crossing over, Open Food Facts lookup, duplicate barcode, live home counts,
@@ -27,14 +30,10 @@ the portfolio live demo.
 - Appium suite in `e2e/` (4 specs), typechecks. Running it is on hold (owner, 2026-10-08: no JDK/Android SDK setup).
 
 ## In progress
-- Nothing mid-edit. Waiting on the owner to deploy to Vercel.
+- Nothing mid-edit.
 
 ## Next steps
-1. Owner deploys to Vercel with EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY env vars. After
-   that, push WIP to a branch, not `main`.
-2. Run the two-browser check against the live URL; portfolio entry (screenshots from the deployed app, a two-person
-   realtime shot) + About mention; merge the portfolio branch.
-3. (On hold) EAS APK and running the Appium suite.
+1. (On hold) EAS APK and running the Appium suite.
 
 ## Decisions & gotchas
 - **Expo Router**, per the template's AGENTS.md (the spec didn't name a navigator; SalahCompanion used React
