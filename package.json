@@ -42,7 +42,7 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test:integration": "node --env-file-if-exists=.env --test tests/integration/*.test.ts"
+    "test:integration": "node --env-file-if-exists=.env --test tests/integration/sharecart.test.mts"
   },
   "private": true,
   "jest": {
